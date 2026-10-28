@@ -17190,6 +17190,14 @@ dumpACL(Archive *fout, DumpId objDumpId, DumpId altDumpId,
 		strcmp(name, "\"pg_stat_statements_reset\"()") == 0)
 		return InvalidDumpId;
 
+	/* YB: PG17 added minmax_only to pg_stat_statements_reset; map a PG15 ACL to it. */
+	if (IsYugabyteEnabled && dopt->binary_upgrade &&
+		fout->remoteVersion < 170000 &&
+		nspname != NULL && strcmp(nspname, "pg_catalog") == 0 &&
+		strncmp(name, "\"pg_stat_statements_reset\"(",
+				strlen("\"pg_stat_statements_reset\"(")) == 0)
+		name = "\"pg_stat_statements_reset\"(oid, oid, bigint, boolean)";
+
 	/* --data-only skips ACLs *except* large object ACLs */
 	if (!dopt->dumpSchema && strcmp(type, "LARGE OBJECT") != 0)
 		return InvalidDumpId;
